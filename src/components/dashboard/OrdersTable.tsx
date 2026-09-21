@@ -20,6 +20,7 @@ import {
   resetFilters,
 } from '@/lib/features/tableSlice';
 import { OrderRecord } from '@/lib/data/mockOrders';
+import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
 import {
   Table,
   TableBody,
@@ -42,6 +43,9 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Filter,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Electronics', 'Apparel', 'Home & Kitchen', 'Books', 'Fitness'] as const;
@@ -51,6 +55,9 @@ export function OrdersTable() {
   const dispatch = useAppDispatch();
   const { data, globalFilter, categoryFilter, statusFilter, sorting, pagination } =
     useAppSelector((state) => state.table);
+
+  const [isExportingExcel, setIsExportingExcel] = React.useState(false);
+  const [isExportingPdf, setIsExportingPdf] = React.useState(false);
 
   const filteredData = React.useMemo(() => {
     return data.filter((item) => {
@@ -74,6 +81,28 @@ export function OrdersTable() {
       return true;
     });
   }, [data, globalFilter, categoryFilter, statusFilter]);
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExportingExcel(true);
+      await exportToExcel(filteredData, `orders-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch {
+      // ignore
+    } finally {
+      setIsExportingExcel(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      setIsExportingPdf(true);
+      await exportToPDF(filteredData, `orders-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch {
+      // ignore
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const columns = React.useMemo<ColumnDef<OrderRecord>[]>(
     () => [
@@ -254,7 +283,6 @@ export function OrdersTable() {
 
   return (
     <div className="space-y-4">
-      {/* Search and Filters Bar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -309,10 +337,41 @@ export function OrdersTable() {
               Reset
             </Button>
           )}
+
+          <div className="flex items-center gap-1.5 ml-auto sm:ml-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={isExportingExcel || filteredData.length === 0}
+              className="h-9 text-xs gap-1.5 cursor-pointer"
+            >
+              {isExportingExcel ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              )}
+              <span>Excel</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isExportingPdf || filteredData.length === 0}
+              className="h-9 text-xs gap-1.5 cursor-pointer"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+              )}
+              <span>PDF</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Desktop/Tablet Table Container */}
       <div className="hidden sm:block rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
@@ -353,7 +412,6 @@ export function OrdersTable() {
         </Table>
       </div>
 
-      {/* Mobile Stacked Card Layout */}
       <div className="sm:hidden space-y-3">
         {paginatedRows.length > 0 ? (
           paginatedRows.map((row) => (
@@ -407,7 +465,6 @@ export function OrdersTable() {
         )}
       </div>
 
-      {/* Pagination Footer */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1 text-xs text-muted-foreground">
         <div>
           Showing{' '}
