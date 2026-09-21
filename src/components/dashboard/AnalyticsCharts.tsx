@@ -92,7 +92,7 @@ export function AnalyticsCharts() {
 
       <CardContent className="pt-6">
         {categoryRevenueData.length > 0 ? (
-          <div className="h-[290px] w-full">
+          <div className="h-72.5 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={categoryRevenueData}
