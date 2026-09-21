@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { logout } from '@/lib/features/authSlice';
 import { OrdersTable } from '@/components/dashboard/OrdersTable';
+import { AnalyticsCharts } from '@/components/dashboard/AnalyticsCharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
@@ -136,6 +137,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <AnalyticsCharts />
 
         <Card className="shadow-sm border-border/80">
           <CardHeader className="pb-4">
