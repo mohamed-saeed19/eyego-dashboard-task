@@ -154,7 +154,7 @@ export function AnalyticsCharts() {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="flex h-[280px] flex-col items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground gap-2">
+          <div className="flex h-70 flex-col items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground gap-2">
             <Layers className="h-6 w-6 text-muted-foreground/50" />
             <span>No chart records match the active filters.</span>
           </div>
