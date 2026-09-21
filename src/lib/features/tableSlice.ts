@@ -1,20 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { INITIAL_ORDERS, OrderRecord } from '../data/mockOrders';
+import { INITIAL_ORDERS } from '../data/mockOrders';
+import type { TableState, TableColumnSort, TablePagination } from '@/types';
 
-export interface TableState {
-  data: OrderRecord[];
-  globalFilter: string;
-  categoryFilter: string;
-  statusFilter: string;
-  sorting: {
-    id: string;
-    desc: boolean;
-  }[];
-  pagination: {
-    pageIndex: number;
-    pageSize: number;
-  };
-}
+export type { TableState, TableColumnSort, TablePagination };
 
 const initialState: TableState = {
   data: INITIAL_ORDERS,
@@ -44,16 +32,10 @@ const tableSlice = createSlice({
       state.statusFilter = action.payload;
       state.pagination.pageIndex = 0;
     },
-    setSorting: (
-      state,
-      action: PayloadAction<{ id: string; desc: boolean }[]>
-    ) => {
+    setSorting: (state, action: PayloadAction<TableColumnSort[]>) => {
       state.sorting = action.payload;
     },
-    setPagination: (
-      state,
-      action: PayloadAction<{ pageIndex: number; pageSize: number }>
-    ) => {
+    setPagination: (state, action: PayloadAction<TablePagination>) => {
       state.pagination = action.payload;
     },
     setPageIndex: (state, action: PayloadAction<number>) => {

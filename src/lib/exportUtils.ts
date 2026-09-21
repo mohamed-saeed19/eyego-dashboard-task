@@ -1,4 +1,4 @@
-import type { OrderRecord } from './data/mockOrders';
+import type { OrderRecord } from '@/types';
 
 export async function exportToExcel(data: OrderRecord[], filename = 'orders-export.xlsx') {
   const XLSX = await import('xlsx');
@@ -31,13 +31,13 @@ export async function exportToPDF(data: OrderRecord[], filename = 'orders-export
     format: 'a4',
   });
 
-  doc.setFontSize(18);
-  doc.setTextColor(33, 37, 41);
-  doc.text('Eyego Commerce - Orders Report', 40, 40);
+  doc.setFontSize(16);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Eyego Commerce — Orders Export', 40, 42);
 
-  doc.setFontSize(10);
-  doc.setTextColor(108, 117, 125);
-  doc.text(`Generated on ${new Date().toLocaleDateString()} | Records: ${data.length}`, 40, 58);
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Generated: ${new Date().toLocaleString()} | Filtered records: ${data.length}`, 40, 58);
 
   const head = [['Order #', 'Customer', 'Category', 'Amount', 'Status', 'Date', 'Country']];
   const body = data.map((order) => [
@@ -53,23 +53,23 @@ export async function exportToPDF(data: OrderRecord[], filename = 'orders-export
   autoTable(doc, {
     head,
     body,
-    startY: 75,
+    startY: 72,
     theme: 'striped',
     headStyles: {
-      fillColor: [24, 24, 27],
+      fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
       fontSize: 9,
       fontStyle: 'bold',
     },
     bodyStyles: {
       fontSize: 8.5,
-      textColor: [33, 37, 41],
+      textColor: [30, 41, 59],
     },
     alternateRowStyles: {
-      fillColor: [248, 249, 250],
+      fillColor: [248, 250, 252],
     },
     styles: {
-      cellPadding: 6,
+      cellPadding: 5.5,
       overflow: 'linebreak',
     },
     margin: { left: 40, right: 40 },

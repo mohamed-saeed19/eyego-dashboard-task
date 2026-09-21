@@ -1,14 +1,4 @@
-export interface OrderRecord {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  category: 'Electronics' | 'Apparel' | 'Home & Kitchen' | 'Books' | 'Fitness';
-  amount: number;
-  status: 'Completed' | 'Pending' | 'Processing' | 'Cancelled';
-  date: string;
-  country: string;
-}
+import type { OrderRecord } from '@/types';
 
 export const INITIAL_ORDERS: OrderRecord[] = [
   {

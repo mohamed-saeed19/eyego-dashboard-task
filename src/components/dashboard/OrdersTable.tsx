@@ -19,8 +19,9 @@ import {
   setPageSize,
   resetFilters,
 } from '@/lib/features/tableSlice';
-import { OrderRecord } from '@/lib/data/mockOrders';
+import type { OrderRecord, OrderStatus, OrderCategory } from '@/types';
 import { exportToExcel, exportToPDF } from '@/lib/exportUtils';
+import { filterOrders, formatCurrency, getStatusBadgeStyles } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -46,10 +47,29 @@ import {
   FileSpreadsheet,
   FileText,
   Loader2,
+  X,
+  CreditCard,
+  User,
+  Calendar,
+  Globe,
 } from 'lucide-react';
 
-const CATEGORIES = ['All', 'Electronics', 'Apparel', 'Home & Kitchen', 'Books', 'Fitness'] as const;
-const STATUSES = ['All', 'Completed', 'Processing', 'Pending', 'Cancelled'] as const;
+const CATEGORIES: ('All' | OrderCategory)[] = [
+  'All',
+  'Electronics',
+  'Apparel',
+  'Home & Kitchen',
+  'Books',
+  'Fitness',
+];
+
+const STATUSES: ('All' | OrderStatus)[] = [
+  'All',
+  'Completed',
+  'Processing',
+  'Pending',
+  'Cancelled',
+];
 
 export function OrdersTable() {
   const dispatch = useAppDispatch();
@@ -60,32 +80,20 @@ export function OrdersTable() {
   const [isExportingPdf, setIsExportingPdf] = React.useState(false);
 
   const filteredData = React.useMemo(() => {
-    return data.filter((item) => {
-      if (categoryFilter !== 'All' && item.category !== categoryFilter) {
-        return false;
-      }
-      if (statusFilter !== 'All' && item.status !== statusFilter) {
-        return false;
-      }
-      if (globalFilter.trim()) {
-        const query = globalFilter.toLowerCase().trim();
-        const matchesName = item.customerName.toLowerCase().includes(query);
-        const matchesEmail = item.customerEmail.toLowerCase().includes(query);
-        const matchesOrder = item.orderNumber.toLowerCase().includes(query);
-        const matchesCountry = item.country.toLowerCase().includes(query);
-        const matchesCategory = item.category.toLowerCase().includes(query);
-        if (!matchesName && !matchesEmail && !matchesOrder && !matchesCountry && !matchesCategory) {
-          return false;
-        }
-      }
-      return true;
+    return filterOrders(data, {
+      global: globalFilter,
+      category: categoryFilter,
+      status: statusFilter,
     });
   }, [data, globalFilter, categoryFilter, statusFilter]);
 
   const handleExportExcel = async () => {
     try {
       setIsExportingExcel(true);
-      await exportToExcel(filteredData, `orders-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      await exportToExcel(
+        filteredData,
+        `eyego-orders-${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
     } catch {
       // ignore
     } finally {
@@ -96,7 +104,10 @@ export function OrdersTable() {
   const handleExportPDF = async () => {
     try {
       setIsExportingPdf(true);
-      await exportToPDF(filteredData, `orders-${new Date().toISOString().slice(0, 10)}.pdf`);
+      await exportToPDF(
+        filteredData,
+        `eyego-orders-${new Date().toISOString().slice(0, 10)}.pdf`
+      );
     } catch {
       // ignore
     } finally {
@@ -112,23 +123,25 @@ export function OrdersTable() {
           <Button
             variant="ghost"
             size="sm"
-            className="-ml-3 h-8 font-semibold text-foreground hover:text-foreground"
+            className="-ml-3 h-8 text-xs font-semibold text-foreground hover:bg-muted/80"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Order #
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="ml-1 h-3.5 w-3.5" />
+              <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="ml-1 h-3.5 w-3.5" />
+              <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
             ) : (
               <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />
             )}
           </Button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono font-medium text-foreground">
-            {row.getValue('orderNumber')}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-semibold text-primary">
+              {row.getValue('orderNumber')}
+            </span>
+          </div>
         ),
       },
       {
@@ -137,14 +150,14 @@ export function OrdersTable() {
           <Button
             variant="ghost"
             size="sm"
-            className="-ml-3 h-8 font-semibold text-foreground hover:text-foreground"
+            className="-ml-3 h-8 text-xs font-semibold text-foreground hover:bg-muted/80"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Customer
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="ml-1 h-3.5 w-3.5" />
+              <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="ml-1 h-3.5 w-3.5" />
+              <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
             ) : (
               <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />
             )}
@@ -152,8 +165,12 @@ export function OrdersTable() {
         ),
         cell: ({ row }) => (
           <div>
-            <div className="font-medium text-foreground">{row.original.customerName}</div>
-            <div className="text-xs text-muted-foreground">{row.original.customerEmail}</div>
+            <div className="font-medium text-xs text-foreground">
+              {row.original.customerName}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {row.original.customerEmail}
+            </div>
           </div>
         ),
       },
@@ -161,7 +178,7 @@ export function OrdersTable() {
         accessorKey: 'category',
         header: 'Category',
         cell: ({ row }) => (
-          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground border border-border/50">
             {row.getValue('category')}
           </span>
         ),
@@ -173,14 +190,14 @@ export function OrdersTable() {
             <Button
               variant="ghost"
               size="sm"
-              className="-mr-3 h-8 font-semibold text-foreground hover:text-foreground"
+              className="-mr-3 h-8 text-xs font-semibold text-foreground hover:bg-muted/80"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             >
               Amount
               {column.getIsSorted() === 'asc' ? (
-                <ArrowUp className="ml-1 h-3.5 w-3.5" />
+                <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" />
               ) : column.getIsSorted() === 'desc' ? (
-                <ArrowDown className="ml-1 h-3.5 w-3.5" />
+                <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
               ) : (
                 <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />
               )}
@@ -189,28 +206,24 @@ export function OrdersTable() {
         ),
         cell: ({ row }) => {
           const amount = parseFloat(row.getValue('amount'));
-          const formatted = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-          }).format(amount);
-          return <div className="text-right font-medium text-foreground">{formatted}</div>;
+          return (
+            <div className="text-right font-semibold text-xs text-foreground">
+              {formatCurrency(amount)}
+            </div>
+          );
         },
       },
       {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => {
-          const status = row.getValue('status') as OrderRecord['status'];
-          const colorMap: Record<OrderRecord['status'], string> = {
-            Completed: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-            Processing: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-            Pending: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-            Cancelled: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-          };
+          const status = row.getValue('status') as OrderStatus;
+          const styles = getStatusBadgeStyles(status);
           return (
             <span
-              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${colorMap[status]}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${styles.badge}`}
             >
+              <span className={`h-1.5 w-1.5 rounded-full ${styles.dot}`} />
               {status}
             </span>
           );
@@ -222,25 +235,29 @@ export function OrdersTable() {
           <Button
             variant="ghost"
             size="sm"
-            className="-ml-3 h-8 font-semibold text-foreground hover:text-foreground"
+            className="-ml-3 h-8 text-xs font-semibold text-foreground hover:bg-muted/80"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Date
             {column.getIsSorted() === 'asc' ? (
-              <ArrowUp className="ml-1 h-3.5 w-3.5" />
+              <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" />
             ) : column.getIsSorted() === 'desc' ? (
-              <ArrowDown className="ml-1 h-3.5 w-3.5" />
+              <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
             ) : (
               <ArrowUpDown className="ml-1 h-3.5 w-3.5 opacity-40" />
             )}
           </Button>
         ),
-        cell: ({ row }) => <span className="text-muted-foreground">{row.getValue('date')}</span>,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">{row.getValue('date')}</span>
+        ),
       },
       {
         accessorKey: 'country',
         header: 'Country',
-        cell: ({ row }) => <span className="text-muted-foreground">{row.getValue('country')}</span>,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">{row.getValue('country')}</span>
+        ),
       },
     ],
     []
@@ -281,59 +298,72 @@ export function OrdersTable() {
     (currentPage + 1) * pagination.pageSize
   );
 
+  const hasActiveFilters = Boolean(
+    globalFilter || categoryFilter !== 'All' || statusFilter !== 'All'
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Search by order, customer, country..."
+            placeholder="Search orders, customers, country..."
             value={globalFilter}
             onChange={(e) => dispatch(setGlobalFilter(e.target.value))}
-            className="pl-9 h-9"
+            className="pl-9 pr-8 h-9 text-xs bg-background/80"
           />
+          {globalFilter && (
+            <button
+              type="button"
+              onClick={() => dispatch(setGlobalFilter(''))}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Category:</span>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60">
+            <Filter className="h-3.5 w-3.5 text-primary" />
+            <span className="font-medium text-[11px]">Category:</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => dispatch(setCategoryFilter(e.target.value))}
+              className="bg-transparent text-xs text-foreground font-medium focus:outline-none cursor-pointer"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat} className="bg-popover text-popover-foreground">
+                  {cat}
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={categoryFilter}
-            onChange={(e) => dispatch(setCategoryFilter(e.target.value))}
-            className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
 
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground ml-2">
-            <span>Status:</span>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60">
+            <span className="font-medium text-[11px]">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => dispatch(setStatusFilter(e.target.value))}
+              className="bg-transparent text-xs text-foreground font-medium focus:outline-none cursor-pointer"
+            >
+              {STATUSES.map((st) => (
+                <option key={st} value={st} className="bg-popover text-popover-foreground">
+                  {st}
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => dispatch(setStatusFilter(e.target.value))}
-            className="h-9 rounded-md border border-input bg-background px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {STATUSES.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
-          </select>
 
-          {(globalFilter || categoryFilter !== 'All' || statusFilter !== 'All') && (
+          {hasActiveFilters && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => dispatch(resetFilters())}
-              className="h-9 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer"
             >
-              <RotateCcw className="mr-1 h-3.5 w-3.5" />
+              <RotateCcw className="h-3 w-3" />
               Reset
             </Button>
           )}
@@ -344,12 +374,12 @@ export function OrdersTable() {
               size="sm"
               onClick={handleExportExcel}
               disabled={isExportingExcel || filteredData.length === 0}
-              className="h-9 text-xs gap-1.5 cursor-pointer"
+              className="h-8 text-xs gap-1.5 cursor-pointer bg-background hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 dark:hover:bg-emerald-950/30 transition-colors"
             >
               {isExportingExcel ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
               )}
               <span>Excel</span>
             </Button>
@@ -359,12 +389,12 @@ export function OrdersTable() {
               size="sm"
               onClick={handleExportPDF}
               disabled={isExportingPdf || filteredData.length === 0}
-              className="h-9 text-xs gap-1.5 cursor-pointer"
+              className="h-8 text-xs gap-1.5 cursor-pointer bg-background hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 dark:hover:bg-rose-950/30 transition-colors"
             >
               {isExportingPdf ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <FileText className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                <FileText className="h-3.5 w-3.5 text-rose-600" />
               )}
               <span>PDF</span>
             </Button>
@@ -372,13 +402,13 @@ export function OrdersTable() {
         </div>
       </div>
 
-      <div className="hidden sm:block rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden">
+      <div className="hidden sm:block rounded-xl border border-border/80 bg-card shadow-xs overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/40">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="py-3 px-4">
+                  <TableHead key={header.id} className="py-3 px-4 text-xs font-semibold text-muted-foreground">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -393,7 +423,10 @@ export function OrdersTable() {
           <TableBody>
             {paginatedRows.length > 0 ? (
               paginatedRows.map((row) => (
-                <TableRow key={row.id} className="hover:bg-muted/40 transition-colors">
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-muted/30 transition-colors border-b border-border/60"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-3 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -403,8 +436,8 @@ export function OrdersTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
-                  No orders found matching the filter criteria.
+                <TableCell colSpan={columns.length} className="h-32 text-center text-xs text-muted-foreground">
+                  No orders match the selected filters.
                 </TableCell>
               </TableRow>
             )}
@@ -414,77 +447,83 @@ export function OrdersTable() {
 
       <div className="sm:hidden space-y-3">
         {paginatedRows.length > 0 ? (
-          paginatedRows.map((row) => (
-            <Card key={row.id} className="p-4 shadow-sm border-border/70">
-              <div className="flex items-center justify-between border-b pb-2 mb-2">
-                <span className="font-mono text-sm font-semibold">{row.original.orderNumber}</span>
-                <span
-                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
-                    row.original.status === 'Completed'
-                      ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                      : row.original.status === 'Processing'
-                      ? 'bg-sky-500/10 text-sky-600 border-sky-500/20'
-                      : row.original.status === 'Pending'
-                      ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                      : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
-                  }`}
-                >
-                  {row.original.status}
-                </span>
-              </div>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Customer:</span>
-                  <span className="font-medium text-foreground">{row.original.customerName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category:</span>
-                  <span className="font-medium text-foreground">{row.original.category}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Country:</span>
-                  <span className="font-medium text-foreground">{row.original.country}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date:</span>
-                  <span className="font-medium text-foreground">{row.original.date}</span>
-                </div>
-                <div className="flex justify-between pt-1 border-t mt-2">
-                  <span className="font-medium text-foreground">Amount:</span>
-                  <span className="font-bold text-foreground">
-                    ${row.original.amount.toFixed(2)}
+          paginatedRows.map((row) => {
+            const styles = getStatusBadgeStyles(row.original.status);
+            return (
+              <Card key={row.id} className="p-4 shadow-sm border-border/80 bg-card space-y-3">
+                <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                  <span className="font-mono text-xs font-bold text-primary">
+                    {row.original.orderNumber}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles.badge}`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${styles.dot}`} />
+                    {row.original.status}
                   </span>
                 </div>
-              </div>
-            </Card>
-          ))
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <User className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                    <span className="truncate text-foreground font-medium">
+                      {row.original.customerName}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                    <span className="truncate">{row.original.country}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                    <span>{row.original.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {row.original.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <CreditCard className="h-3 w-3" />
+                    Total
+                  </span>
+                  <span className="font-bold text-sm text-foreground">
+                    {formatCurrency(row.original.amount)}
+                  </span>
+                </div>
+              </Card>
+            );
+          })
         ) : (
-          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No orders found matching the filter criteria.
+          <div className="rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground">
+            No orders match the selected filters.
           </div>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1 text-xs text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 text-xs text-muted-foreground">
         <div>
           Showing{' '}
-          <span className="font-medium text-foreground">
+          <span className="font-semibold text-foreground">
             {filteredData.length === 0 ? 0 : currentPage * pagination.pageSize + 1}
           </span>{' '}
           to{' '}
-          <span className="font-medium text-foreground">
+          <span className="font-semibold text-foreground">
             {Math.min((currentPage + 1) * pagination.pageSize, filteredData.length)}
           </span>{' '}
-          of <span className="font-medium text-foreground">{filteredData.length}</span> orders
+          of <span className="font-semibold text-foreground">{filteredData.length}</span> records
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <span>Rows:</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px]">Rows:</span>
             <select
               value={pagination.pageSize}
               onChange={(e) => dispatch(setPageSize(Number(e.target.value)))}
-              className="h-7 rounded border border-input bg-background px-1 text-xs text-foreground focus:outline-none"
+              className="h-7 rounded-md border border-input bg-background px-1.5 text-xs text-foreground focus:outline-none cursor-pointer"
             >
               {[4, 6, 8, 12].map((size) => (
                 <option key={size} value={size}>
@@ -494,13 +533,14 @@ export function OrdersTable() {
             </select>
           </div>
 
-          <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="icon-xs"
               onClick={() => dispatch(setPageIndex(0))}
               disabled={currentPage === 0}
               aria-label="First page"
+              className="cursor-pointer h-7 w-7"
             >
               <ChevronsLeft className="h-3.5 w-3.5" />
             </Button>
@@ -510,10 +550,11 @@ export function OrdersTable() {
               onClick={() => dispatch(setPageIndex(currentPage - 1))}
               disabled={currentPage === 0}
               aria-label="Previous page"
+              className="cursor-pointer h-7 w-7"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="px-2 text-foreground font-medium">
+            <span className="px-2 text-xs font-semibold text-foreground">
               {currentPage + 1} / {pageCount}
             </span>
             <Button
@@ -522,6 +563,7 @@ export function OrdersTable() {
               onClick={() => dispatch(setPageIndex(currentPage + 1))}
               disabled={currentPage >= pageCount - 1}
               aria-label="Next page"
+              className="cursor-pointer h-7 w-7"
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </Button>
@@ -531,6 +573,7 @@ export function OrdersTable() {
               onClick={() => dispatch(setPageIndex(pageCount - 1))}
               disabled={currentPage >= pageCount - 1}
               aria-label="Last page"
+              className="cursor-pointer h-7 w-7"
             >
               <ChevronsRight className="h-3.5 w-3.5" />
             </Button>

@@ -1,16 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { User, AuthState, LoginCredentials, LoginResponse } from '@/types';
 
-export interface User {
-  email: string;
-  name?: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  token: string | null;
-  status: 'idle' | 'loading' | 'succeeded' | 'failed';
-  error: string | null;
-}
+export type { User, AuthState, LoginCredentials, LoginResponse };
 
 const getStoredToken = (): string | null => {
   if (typeof window === 'undefined') return null;
@@ -27,16 +18,6 @@ const initialState: AuthState = {
   status: 'idle',
   error: null,
 };
-
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface LoginResponse {
-  user: User;
-  token: string;
-}
 
 export const loginUser = createAsyncThunk<
   LoginResponse,

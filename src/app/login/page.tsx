@@ -15,7 +15,16 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
-import { Loader2, Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import {
+  Loader2,
+  Lock,
+  Mail,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Sparkles,
+  ShieldCheck,
+} from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,18 +69,29 @@ export default function LoginPage() {
   const displayedError = validationError || error;
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-muted/40">
-      <div className="w-full max-w-md">
-        <Card className="shadow-lg border-border/80">
-          <CardHeader className="space-y-1 text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Lock className="h-6 w-6" />
-            </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">
-              Welcome back
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Sign in to access your analytics dashboard
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-400/10 blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-md relative z-10">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3 border border-primary/20">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Eyego Analytics Portal</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Sign in to Eyego
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Access enterprise orders, live visualizations, and reports
+          </p>
+        </div>
+
+        <Card className="shadow-xl border-border/80 bg-card/95 backdrop-blur-md">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-lg font-semibold">Account Credentials</CardTitle>
+            <CardDescription className="text-xs">
+              Enter your authorized credentials to proceed
             </CardDescription>
           </CardHeader>
 
@@ -80,19 +100,22 @@ export default function LoginPage() {
               {displayedError && (
                 <div
                   role="alert"
-                  className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive"
+                  className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive flex items-center gap-2"
                 >
-                  {displayedError}
+                  <div className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                  <span>{displayedError}</span>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email address</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs font-medium">
+                  Email Address
+                </Label>
                 <div className="relative">
                   <Input
                     id="email"
                     type="email"
-                    placeholder="name@company.com"
+                    placeholder="test@example.com"
                     autoComplete="email"
                     disabled={isLoading}
                     value={email}
@@ -103,17 +126,17 @@ export default function LoginPage() {
                         dispatch(clearAuthError());
                       }
                     }}
-                    className="pl-9"
+                    className="pl-9 h-10 text-sm bg-background/60"
                     required
                   />
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs font-medium">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -129,14 +152,14 @@ export default function LoginPage() {
                         dispatch(clearAuthError());
                       }
                     }}
-                    className="pl-9 pr-9"
+                    className="pl-9 pr-10 h-10 text-sm bg-background/60"
                     required
                   />
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
@@ -148,19 +171,32 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+              <div className="rounded-xl border border-border/70 bg-muted/40 p-3 text-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-foreground">Demo Credentials</span>
-                  <button
+                  <div className="flex items-center gap-1.5 text-foreground font-semibold">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <span>Demo Evaluation Access</span>
+                  </div>
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="xs"
                     onClick={handleFillDemo}
-                    className="text-primary hover:underline font-medium cursor-pointer"
+                    className="h-6 px-2 text-[11px] font-medium bg-card hover:bg-muted"
                   >
                     Auto-fill
-                  </button>
+                  </Button>
                 </div>
-                <p>Email: <code className="text-foreground">test@example.com</code></p>
-                <p>Password: <code className="text-foreground">123456</code></p>
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                  <div>
+                    <span className="opacity-75">Email: </span>
+                    <span className="font-mono text-foreground">test@example.com</span>
+                  </div>
+                  <div>
+                    <span className="opacity-75">Password: </span>
+                    <span className="font-mono text-foreground">123456</span>
+                  </div>
+                </div>
               </div>
             </CardContent>
 
@@ -168,7 +204,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full cursor-pointer h-10"
+                className="w-full h-10 text-sm font-medium shadow-md shadow-primary/20 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -177,7 +213,7 @@ export default function LoginPage() {
                   </>
                 ) : (
                   <>
-                    Sign in
+                    Continue to Dashboard
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
