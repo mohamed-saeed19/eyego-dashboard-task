@@ -5,7 +5,6 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('auth_token')?.value;
 
-  // Protect /dashboard and all sub-routes
   if (pathname.startsWith('/dashboard')) {
     if (!token) {
       const loginUrl = new URL('/login', request.url);
@@ -14,7 +13,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // If already logged in, visiting /login redirects to /dashboard
   if (pathname === '/login' && token) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }

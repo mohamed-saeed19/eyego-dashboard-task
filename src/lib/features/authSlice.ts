@@ -92,7 +92,6 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         if (typeof window !== 'undefined') {
           localStorage.setItem('token', action.payload.token);
-          // Set cookie for middleware route protection
           document.cookie = `auth_token=${action.payload.token}; path=/; max-age=86400; SameSite=Lax`;
         }
       })

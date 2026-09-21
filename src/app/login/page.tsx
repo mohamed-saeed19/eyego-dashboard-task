@@ -27,7 +27,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // If already authenticated, redirect to dashboard
   useEffect(() => {
     if (token) {
       router.replace('/dashboard');
@@ -149,7 +148,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Demo credentials shortcut */}
               <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-foreground">Demo Credentials</span>
