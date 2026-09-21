@@ -13,7 +13,6 @@ import {
   TrendingUp,
   Package,
   DollarSign,
-  Users,
 } from 'lucide-react';
 
 export default function DashboardPage() {
