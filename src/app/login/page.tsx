@@ -22,7 +22,6 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Sparkles,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -75,10 +74,6 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3 border border-primary/20">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Eyego Analytics Portal</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             Sign in to Eyego
           </h1>
@@ -171,7 +166,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border/70 bg-muted/40 p-3 text-xs space-y-2">
+              <div className="rounded-xl border border-border/70 bg-muted/40 p-3 text-xs space-y-2 mb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-foreground font-semibold">
                     <ShieldCheck className="h-4 w-4 text-primary" />
